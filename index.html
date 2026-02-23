@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notion Demand Research — AI-Powered Demand Forecasting</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ─── WAITLIST MODAL ─── -->
+<div class="modal-backdrop" id="waitlistBackdrop" onclick="closeWaitlist(event)">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <button class="modal-close" onclick="closeWaitlistBtn()" aria-label="Close">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+
+    <!-- Step 1: Form -->
+    <div id="modal-form-view">
+      <div class="modal-badge">Early Access</div>
+      <h2 class="modal-title" id="modal-title">Join the Waitlist</h2>
+      <p class="modal-sub">Tell us which forecasting model you're most interested in and we'll notify you when it's ready.</p>
+
+      <form id="waitlistForm" onsubmit="submitWaitlist(event)" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="wl-email">Work Email <span class="required">*</span></label>
+          <input class="form-input" type="email" id="wl-email" placeholder="you@company.com" required autocomplete="email"/>
+          <div class="form-error" id="email-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wl-name">Full Name</label>
+          <input class="form-input" type="text" id="wl-name" placeholder="Your name" autocomplete="name"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Which model are you most interested in? <span class="required">*</span></label>
+          <div class="model-select-grid" id="model-select-grid">
+            <label class="model-option">
+              <input type="radio" name="model" value="TimeGPT" required/>
+              <span class="model-option-inner">
+                <span class="model-option-icon">⚡</span>
+                <span class="model-option-name">TimeGPT</span>
+                <span class="model-option-desc">Foundation model for time series</span>
+              </span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="model" value="StatisticalGPT"/>
+              <span class="model-option-inner">
+                <span class="model-option-icon">📊</span>
+                <span class="model-option-name">StatisticalGPT</span>
+                <span class="model-option-desc">LLM + classical stats fusion</span>
+              </span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="model" value="MCDFN"/>
+              <span class="model-option-inner">
+                <span class="model-option-icon">🧠</span>
+                <span class="model-option-name">MCDFN</span>
+                <span class="model-option-desc">CNN + LSTM + GRU hybrid</span>
+              </span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="model" value="Chronos"/>
+              <span class="model-option-inner">
+                <span class="model-option-icon">🔮</span>
+                <span class="model-option-name">Chronos</span>
+                <span class="model-option-desc">Probabilistic foundation model</span>
+              </span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="model" value="MOIRAI"/>
+              <span class="model-option-inner">
+                <span class="model-option-icon">🌐</span>
+                <span class="model-option-name">MOIRAI</span>
+                <span class="model-option-desc">Unified time series model</span>
+              </span>
+            </label>
+            <label class="model-option">
+              <input type="radio" name="model" value="Custom / Other"/>
+              <span class="model-option-inner">
+                <span class="model-option-icon">✦</span>
+                <span class="model-option-name">Custom</span>
+                <span class="model-option-desc">Build something bespoke</span>
+              </span>
+            </label>
+          </div>
+          <div class="form-error" id="model-error"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wl-usecase">Use Case <span class="form-hint">(optional)</span></label>
+          <select class="form-input form-select" id="wl-usecase">
+            <option value="">Select your industry / use case</option>
+            <option value="Retail Demand Planning">Retail Demand Planning</option>
+            <option value="Supply Chain Optimization">Supply Chain Optimization</option>
+            <option value="E-Commerce Sales Forecasting">E-Commerce Sales Forecasting</option>
+            <option value="Food & FMCG">Food &amp; FMCG</option>
+            <option value="Manufacturing SCM">Manufacturing SCM</option>
+            <option value="Logistics & Inventory">Logistics &amp; Inventory</option>
+            <option value="Financial Forecasting">Financial Forecasting</option>
+            <option value="Research / Academic">Research / Academic</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-full" type="submit" id="wl-submit">
+          <span id="wl-btn-text">Join Waitlist</span>
+          <svg id="wl-spinner" class="spinner hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        </button>
+
+        <p class="form-privacy">We respect your privacy. No spam, ever. Unsubscribe anytime.</p>
+      </form>
+    </div>
+
+    <!-- Step 2: Success -->
+    <div id="modal-success-view" class="hidden">
+      <div class="success-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 class="modal-title">You're on the list!</h2>
+      <p class="modal-sub">We'll reach out to <strong id="success-email"></strong> when your selected model is ready for early access.</p>
+      <div class="success-model-chip" id="success-model-chip"></div>
+      <button class="btn btn-ghost btn-full" onclick="closeWaitlistBtn()" style="margin-top:24px;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NAV ─── -->
+<nav class="nav" id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <rect width="32" height="32" rx="8" fill="url(#grad-logo)"/>
+        <path d="M8 20L14 12L19 17L24 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="24" cy="9" r="2" fill="#00e5ff"/>
+        <defs>
+          <linearGradient id="grad-logo" x1="0" y1="0" x2="32" y2="32">
+            <stop stop-color="#6366f1"/>
+            <stop offset="1" stop-color="#0ea5e9"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <span class="nav-brand">Notion Demand<span class="nav-brand-accent"> Research</span></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#advisor">AI Advisor</a></li>
+      <li><a href="#foundation">Foundation Models</a></li>
+      <li><a href="#models">Models</a></li>
+      <li><a href="#research">Research</a></li>
+    </ul>
+    <div class="nav-cta">
+      <a href="#research" class="btn btn-ghost">Read Papers</a>
+      <button class="btn btn-primary" onclick="openWaitlist()">Join Waitlist</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section class="hero">
+  <div class="hero-glow hero-glow-1"></div>
+  <div class="hero-glow hero-glow-2"></div>
+  <div class="hero-glow hero-glow-3"></div>
+
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      Forecasting Research · 2024–25
+    </div>
+
+    <h1 class="hero-title">
+      Next-Generation<br/>
+      <span class="gradient-text">Demand Forecasting</span><br/>
+      Powered by AI
+    </h1>
+
+    <p class="hero-sub">
+      From classical statistics to foundation models — a research platform unifying
+      TimeGPT, Chronos, MOIRAI, and hybrid deep learning architectures for
+      supply chain and retail demand intelligence.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn btn-primary btn-lg" onclick="openWaitlist()">
+        Get Early Access
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <a href="#research" class="btn btn-ghost btn-lg">Explore Research</a>
+    </div>
+
+    <!-- Hero Chart -->
+    <div class="hero-chart" aria-hidden="true">
+      <div class="chart-header">
+        <span class="chart-label">Forecast vs Actual — Retail Demand (MCDFN Model)</span>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-dot legend-actual"></span>Actual</span>
+          <span class="legend-item"><span class="legend-dot legend-pred"></span>Predicted</span>
+          <span class="legend-item"><span class="legend-dot legend-ci"></span>95% CI</span>
+        </div>
+      </div>
+      <svg class="chart-svg" viewBox="0 0 800 200" preserveAspectRatio="none">
+        <line x1="0" y1="40" x2="800" y2="40" stroke="#ffffff08" stroke-width="1"/>
+        <line x1="0" y1="80" x2="800" y2="80" stroke="#ffffff08" stroke-width="1"/>
+        <line x1="0" y1="120" x2="800" y2="120" stroke="#ffffff08" stroke-width="1"/>
+        <line x1="0" y1="160" x2="800" y2="160" stroke="#ffffff08" stroke-width="1"/>
+        <path d="M0,140 C50,130 100,100 150,90 C200,80 250,70 300,75 C350,80 400,60 450,50 C500,40 550,55 600,65 C650,75 700,70 750,60 L800,55
+                 L800,80 C750,90 700,100 650,105 C600,110 550,90 500,75 C450,60 400,90 350,110 C300,130 250,110 200,110 C150,110 100,130 50,150 Z"
+              fill="url(#ci-fill)" opacity="0.3"/>
+        <path d="M0,145 C50,135 100,105 150,95 C200,85 250,75 300,82 C350,89 400,68 450,55 C500,42 550,60 600,72 C650,84 700,78 750,66 L800,60"
+              fill="none" stroke="#6366f1" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.8"/>
+        <path class="chart-line-forecast" d="M0,145 C50,133 100,103 150,93 C200,83 250,73 300,80 C350,87 400,65 450,52 C500,39 550,57 600,69 C650,81 700,75 750,63 L800,57"
+              fill="none" stroke="#00e5ff" stroke-width="3"/>
+        <line x1="500" y1="20" x2="500" y2="185" stroke="#ffffff20" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="508" y="35" fill="#ffffff40" font-size="11" font-family="Inter, sans-serif">Forecast →</text>
+        <circle cx="150" cy="95" r="4" fill="#6366f1"/>
+        <circle cx="300" cy="82" r="4" fill="#6366f1"/>
+        <circle cx="450" cy="55" r="4" fill="#6366f1"/>
+        <circle cx="750" cy="63" r="5" fill="#00e5ff" class="pulse-dot"/>
+        <defs>
+          <linearGradient id="ci-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop stop-color="#00e5ff" stop-opacity="0.5"/>
+            <stop offset="1" stop-color="#6366f1" stop-opacity="0.1"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="chart-metrics">
+        <div class="metric-pill">RMSE: 4.86%</div>
+        <div class="metric-pill">MAE: 4.00%</div>
+        <div class="metric-pill">MAPE: 20.2%</div>
+        <div class="metric-pill metric-pill-green">R²: 0.965</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── STATS ─── -->
+<section class="stats-section">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-number">500+</div>
+        <div class="stat-label">Citations &amp; Methods Analysed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">10+</div>
+        <div class="stat-label">Model Architectures Benchmarked</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">96.5%</div>
+        <div class="stat-label">Best R² Score (Hybrid RF-XGBoost)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">50%</div>
+        <div class="stat-label">RMSE Reduction with Exogenous Vars</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── AI ADVISOR ─── -->
+<section class="advisor-section" id="advisor">
+  <div class="advisor-glow advisor-glow-1"></div>
+  <div class="advisor-glow advisor-glow-2"></div>
+  <div class="container">
+    <div class="advisor-inner">
+      <div class="advisor-header">
+        <div class="advisor-pill">
+          <span class="advisor-pill-dot"></span>
+          AI Model Advisor
+        </div>
+        <h2 class="advisor-title">What's the right forecasting<br/><span class="gradient-text">model for your business?</span></h2>
+        <p class="advisor-sub">Describe your forecasting challenge — industry, data availability, horizon, and constraints — and get an instant, research-backed recommendation.</p>
+      </div>
+
+      <div class="advisor-box">
+        <div class="advisor-input-area">
+          <div class="advisor-input-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            Describe your business situation
+          </div>
+          <textarea
+            id="advisor-input"
+            class="advisor-textarea"
+            placeholder="e.g. We're a mid-size retail chain with 3 years of daily sales data across 200 SKUs. We have seasonal products, occasional promotions, and need to forecast 30 days ahead for inventory planning. Our team has basic Python skills but no ML expertise..."
+            rows="5"
+          ></textarea>
+          <div class="advisor-examples">
+            <span class="advisor-ex-label">Try:</span>
+            <button class="advisor-ex-chip" onclick="fillExample(this)" data-text="We are a large FMCG company forecasting at national, regional, and store level. We need hierarchical coherence across these levels, have 4 years of weekly sales data, an in-house data science team, and stakeholders require explainability for S&OP.">FMCG · Hierarchy · Explainability</button>
+            <button class="advisor-ex-chip" onclick="fillExample(this)" data-text="E-commerce startup with 6 months of daily order data, no ML team, need quick and scalable forecasting via API across thousands of SKUs with zero-shot deployment.">E-commerce · No ML Team · Zero-shot</button>
+            <button class="advisor-ex-chip" onclick="fillExample(this)" data-text="Supply chain manager at a manufacturer. We have intermittent, sparse demand for spare parts and tail SKUs with very few orders per year. We also need stable, consistent forecasts that don't change drastically between retraining cycles for our production planning.">Sparse Demand · Stability · Production</button>
+            <button class="advisor-ex-chip" onclick="fillExample(this)" data-text="Large retail chain with 5 years of POS data, in-house ML engineering team using Python and PyTorch. We need the highest accuracy model with multivariate inputs including promotions and weather. We forecast daily at store level and need to roll up to regional and national level.">Enterprise · Deep Learning · Hierarchy</button>
+          </div>
+          <button class="advisor-submit-btn" onclick="runAdvisor()" id="advisor-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"/><path d="M12 8v4l3 3"/></svg>
+            Get Recommendation
+          </button>
+        </div>
+
+        <div class="advisor-output" id="advisor-output" style="display:none">
+          <div class="advisor-output-inner" id="advisor-output-inner"></div>
+          <div class="advisor-consult-cta">
+            <div class="consult-left">
+              <div class="consult-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div>
+                <div class="consult-title">Want a tailored implementation plan?</div>
+                <div class="consult-desc">Our research team can help you design, evaluate, and deploy the right forecasting stack for your exact context.</div>
+              </div>
+            </div>
+            <a href="mailto:team@notiondemand.com?subject=Forecasting Consulting Enquiry&body=Hi Notion Demand team,%0A%0AI'd like to discuss a forecasting project.%0A%0ABusiness context: [describe here]%0A%0AThanks" class="consult-btn">
+              Drop us a note
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOUNDATION MODELS ─── -->
+<section class="section section-alt" id="foundation">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">2024–2025 · Foundation Models</div>
+      <h2 class="section-title">Large Language Models<br/>for Time Series</h2>
+      <p class="section-sub">A new paradigm: pre-trained foundation models that achieve zero-shot and few-shot forecasting across any domain — no retraining required.</p>
+    </div>
+
+    <div class="foundation-grid">
+
+      <!-- TimeGPT -->
+      <div class="foundation-card foundation-card-hero">
+        <div class="foundation-card-glow"></div>
+        <div class="fc-header">
+          <div class="fc-logo fc-logo-timegpt">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect width="28" height="28" rx="7" fill="url(#tgpt-grad)"/>
+              <path d="M7 14h14M14 7v14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="14" cy="14" r="3" fill="white" fill-opacity="0.9"/>
+              <defs>
+                <linearGradient id="tgpt-grad" x1="0" y1="0" x2="28" y2="28">
+                  <stop stop-color="#6366f1"/><stop offset="1" stop-color="#00e5ff"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div>
+            <div class="fc-name">TimeGPT-1</div>
+            <div class="fc-org">Nixtla · 2024</div>
+          </div>
+          <div class="fc-badge fc-badge-new">Foundation Model</div>
+        </div>
+        <p class="fc-desc">The world's first foundation model for time series forecasting and anomaly detection. Trained on over 100 billion data points spanning finance, weather, retail, energy, and healthcare. Achieves state-of-the-art zero-shot performance — no fine-tuning required for new datasets.</p>
+        <div class="fc-highlights">
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Zero-shot forecasting across any domain
+          </div>
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Prediction intervals &amp; anomaly detection
+          </div>
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Fine-tunable on custom supply chain data
+          </div>
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            API-accessible — no infrastructure needed
+          </div>
+        </div>
+        <div class="fc-tags">
+          <span class="tag">Transformer</span><span class="tag">Zero-Shot</span><span class="tag">REST API</span><span class="tag">Anomaly Detection</span>
+        </div>
+        <button class="btn btn-primary fc-cta" onclick="openWaitlistWith('TimeGPT')">Request Access →</button>
+      </div>
+
+      <!-- StatisticalGPT -->
+      <div class="foundation-card foundation-card-hero">
+        <div class="foundation-card-glow foundation-card-glow-purple"></div>
+        <div class="fc-header">
+          <div class="fc-logo fc-logo-statgpt">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              <rect width="28" height="28" rx="7" fill="url(#sgpt-grad)"/>
+              <path d="M7 21L11 15L15 18L21 8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M7 8h4v4H7z" fill="white" fill-opacity="0.5" rx="1"/>
+              <defs>
+                <linearGradient id="sgpt-grad" x1="0" y1="0" x2="28" y2="28">
+                  <stop stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div>
+            <div class="fc-name">StatisticalGPT</div>
+            <div class="fc-org">Notion Demand Research · 2025</div>
+          </div>
+          <div class="fc-badge fc-badge-coming">Coming Soon</div>
+        </div>
+        <p class="fc-desc">Our in-house research model fusing classical statistical methods (ARIMA, ETS, Grey Models) with large language model reasoning. StatisticalGPT interprets demand signals in natural language, provides explainable forecasts, and automatically selects the optimal statistical model family per SKU.</p>
+        <div class="fc-highlights">
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Auto-selects ARIMA / ETS / Grey per series
+          </div>
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Natural language forecast explanations
+          </div>
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Causal reasoning over promotions &amp; events
+          </div>
+          <div class="fc-highlight">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Hierarchical reconciliation built-in
+          </div>
+        </div>
+        <div class="fc-tags">
+          <span class="tag">LLM + Stats Fusion</span><span class="tag">Explainable</span><span class="tag">Auto-Select</span><span class="tag">Hierarchical</span>
+        </div>
+        <button class="btn btn-primary fc-cta" onclick="openWaitlistWith('StatisticalGPT')" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)">Join Waitlist →</button>
+      </div>
+
+    </div>
+
+    <!-- Latest Works Row -->
+    <div class="latest-works-header">
+      <div class="section-badge" style="margin-bottom:0">Latest Works · 2024–2025</div>
+    </div>
+    <div class="latest-grid">
+
+      <div class="latest-card">
+        <div class="lc-header">
+          <div class="lc-logo lc-amazon">A</div>
+          <div>
+            <div class="lc-name">Chronos</div>
+            <div class="lc-org">Amazon AWS · 2024</div>
+          </div>
+          <div class="lc-badge lc-badge-open">Open Source</div>
+        </div>
+        <p class="lc-desc">Probabilistic forecasting via language model pre-training on a large corpus of real and synthetic time series. Quantizes time series into tokens and trains a T5 encoder-decoder. Outperforms specialized models on most zero-shot benchmarks.</p>
+        <div class="lc-meta">
+          <span class="ltag">T5 Transformer</span><span class="ltag">Probabilistic</span><span class="ltag">Zero-Shot</span>
+        </div>
+        <div class="lc-metric-row">
+          <span class="lc-metric-item"><span class="lc-ml">Zero-shot WQL</span> <span class="lc-mv lc-mv-green">Best-in-class</span></span>
+          <span class="lc-metric-item"><span class="lc-ml">Params</span> <span class="lc-mv">710M</span></span>
+        </div>
+        <button class="lc-btn" onclick="openWaitlistWith('Chronos')">Request Access</button>
+      </div>
+
+      <div class="latest-card">
+        <div class="lc-header">
+          <div class="lc-logo lc-salesforce">S</div>
+          <div>
+            <div class="lc-name">MOIRAI</div>
+            <div class="lc-org">Salesforce AI · 2024</div>
+          </div>
+          <div class="lc-badge lc-badge-open">Open Source</div>
+        </div>
+        <p class="lc-desc">Unified Training of Universal Time Series Forecasting Transformers. Trains on LOTSA — a dataset of 27 billion observations across 9 domains. Supports any-variate forecasting with patch-based tokenization and flexible distribution heads.</p>
+        <div class="lc-meta">
+          <span class="ltag">Any-Variate</span><span class="ltag">Patch Tokens</span><span class="ltag">LOTSA Dataset</span>
+        </div>
+        <div class="lc-metric-row">
+          <span class="lc-metric-item"><span class="lc-ml">Training data</span> <span class="lc-mv">27B obs</span></span>
+          <span class="lc-metric-item"><span class="lc-ml">Domains</span> <span class="lc-mv">9</span></span>
+        </div>
+        <button class="lc-btn" onclick="openWaitlistWith('MOIRAI')">Request Access</button>
+      </div>
+
+      <div class="latest-card">
+        <div class="lc-header">
+          <div class="lc-logo lc-google">G</div>
+          <div>
+            <div class="lc-name">TimesFM</div>
+            <div class="lc-org">Google DeepMind · 2024</div>
+          </div>
+          <div class="lc-badge lc-badge-research">Research</div>
+        </div>
+        <p class="lc-desc">A 200M parameter decoder-only foundation model pre-trained on 100B real-world time-series data points. Uses patching and masked pre-training. Achieves near-supervised performance in zero-shot settings on M4, ETT, and Weather benchmarks.</p>
+        <div class="lc-meta">
+          <span class="ltag">Decoder-Only</span><span class="ltag">Patching</span><span class="ltag">200M params</span>
+        </div>
+        <div class="lc-metric-row">
+          <span class="lc-metric-item"><span class="lc-ml">Pre-training</span> <span class="lc-mv">100B pts</span></span>
+          <span class="lc-metric-item"><span class="lc-ml">Params</span> <span class="lc-mv">200M</span></span>
+        </div>
+        <button class="lc-btn" onclick="openWaitlistWith('TimesFM')">Request Access</button>
+      </div>
+
+      <div class="latest-card">
+        <div class="lc-header">
+          <div class="lc-logo lc-meta">M</div>
+          <div>
+            <div class="lc-name">Lag-Llama</div>
+            <div class="lc-org">ServiceNow · 2024</div>
+          </div>
+          <div class="lc-badge lc-badge-open">Open Source</div>
+        </div>
+        <p class="lc-desc">First open-source foundation model for probabilistic time series forecasting built on LLaMA architecture. Uses lag-based tokenization. Achieves strong zero-shot performance and can be fine-tuned with minimal data — ideal for cold-start SCM scenarios.</p>
+        <div class="lc-meta">
+          <span class="ltag">LLaMA</span><span class="ltag">Lag Tokenization</span><span class="ltag">Cold-Start</span>
+        </div>
+        <div class="lc-metric-row">
+          <span class="lc-metric-item"><span class="lc-ml">Architecture</span> <span class="lc-mv">LLaMA</span></span>
+          <span class="lc-metric-item"><span class="lc-ml">Fine-tuning</span> <span class="lc-mv lc-mv-green">Few-shot</span></span>
+        </div>
+        <button class="lc-btn" onclick="openWaitlistWith('Lag-Llama')">Request Access</button>
+      </div>
+
+      <div class="latest-card">
+        <div class="lc-header">
+          <div class="lc-logo lc-nixtla">N</div>
+          <div>
+            <div class="lc-name">NHITS + PatchTST</div>
+            <div class="lc-org">Nixtla / Meta · 2023–24</div>
+          </div>
+          <div class="lc-badge lc-badge-open">Open Source</div>
+        </div>
+        <p class="lc-desc">NHITS uses hierarchical interpolation for long-horizon forecasting. PatchTST applies channel-independent patching to transformers. Both set new records on ETT and M4 benchmarks — central to the Notion Demand neural forecasting stack.</p>
+        <div class="lc-meta">
+          <span class="ltag">Hierarchical</span><span class="ltag">Long-Horizon</span><span class="ltag">Patch Transformer</span>
+        </div>
+        <div class="lc-metric-row">
+          <span class="lc-metric-item"><span class="lc-ml">Benchmark</span> <span class="lc-mv lc-mv-green">SOTA ETT</span></span>
+        </div>
+        <button class="lc-btn" onclick="openWaitlistWith('NHITS/PatchTST')">Request Access</button>
+      </div>
+
+      <div class="latest-card">
+        <div class="lc-header">
+          <div class="lc-logo lc-tsinghua">T</div>
+          <div>
+            <div class="lc-name">TimeMixer</div>
+            <div class="lc-org">Tsinghua / 2024</div>
+          </div>
+          <div class="lc-badge lc-badge-research">Research</div>
+        </div>
+        <p class="lc-desc">Decomposable multiscale mixing architecture — separately models seasonal and trend components at multiple resolutions. Outperforms iTransformer and PatchTST on several long-horizon benchmarks with significantly fewer parameters.</p>
+        <div class="lc-meta">
+          <span class="ltag">Multiscale</span><span class="ltag">Decomposition</span><span class="ltag">Long-Horizon</span>
+        </div>
+        <div class="lc-metric-row">
+          <span class="lc-metric-item"><span class="lc-ml">vs iTransformer</span> <span class="lc-mv lc-mv-green">+3.2% MSE</span></span>
+        </div>
+        <button class="lc-btn" onclick="openWaitlistWith('TimeMixer')">Request Access</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── MODELS SECTION ─── -->
+<section class="section" id="models">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Deep Learning Architectures</div>
+      <h2 class="section-title">Hybrid Models Studied</h2>
+      <p class="section-sub">From classical statistical baselines to cutting-edge hybrid deep learning architectures — comprehensive analysis of demand forecasting approaches across supply chain and retail domains.</p>
+    </div>
+
+    <div class="models-grid">
+      <div class="model-card model-card-featured">
+        <div class="model-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#6366f120"/>
+            <circle cx="10" cy="22" r="3" fill="#6366f1"/>
+            <circle cx="16" cy="14" r="3" fill="#8b5cf6"/>
+            <circle cx="22" cy="10" r="3" fill="#00e5ff"/>
+            <line x1="10" y1="22" x2="16" y2="14" stroke="#6366f1" stroke-width="1.5"/>
+            <line x1="16" y1="14" x2="22" y2="10" stroke="#00e5ff" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="model-badge">State of the Art</div>
+        <h3 class="model-name">MCDFN</h3>
+        <p class="model-full">Multi-Channel Data Fusion Network</p>
+        <p class="model-desc">Hybrid CNN + BiLSTM + GRU architecture that extracts both spatial and temporal features simultaneously. Outperforms 7 other deep learning models with statistically verified results (paired t-test, p=0.05).</p>
+        <div class="model-metrics">
+          <span class="m-chip">MSE: 23.57%</span>
+          <span class="m-chip">RMSE: 4.86%</span>
+          <span class="m-chip">MAE: 3.99%</span>
+        </div>
+        <div class="model-tags">
+          <span class="tag">CNN</span><span class="tag">LSTM</span><span class="tag">GRU</span><span class="tag">XAI</span>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#0ea5e920"/>
+            <rect x="8" y="20" width="4" height="6" rx="1" fill="#0ea5e9"/>
+            <rect x="14" y="15" width="4" height="11" rx="1" fill="#0ea5e9"/>
+            <rect x="20" y="10" width="4" height="16" rx="1" fill="#38bdf8"/>
+          </svg>
+        </div>
+        <h3 class="model-name">DLSTM-SCM</h3>
+        <p class="model-full">Dynamic LSTM Supply Chain Management</p>
+        <p class="model-desc">Dynamically updates deployed LSTM models using historical sales data augmented with lag and rolling window statistical features. Evaluated on Walmart benchmark dataset.</p>
+        <div class="model-tags">
+          <span class="tag">LSTM</span><span class="tag">Dynamic</span><span class="tag">Lag Features</span>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#10b98120"/>
+            <path d="M8 24L14 16L19 20L24 10" stroke="#10b981" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="14" cy="16" r="2" fill="#10b981"/>
+            <circle cx="19" cy="20" r="2" fill="#34d399"/>
+          </svg>
+        </div>
+        <h3 class="model-name">RF-XGBoost-LR</h3>
+        <p class="model-full">Hybrid Ensemble Stacking</p>
+        <p class="model-desc">Novel stacking ensemble combining Random Forest bagging + XGBoost boosting with Logistic Regression meta-learner. Achieves R² = 0.9651 on real-time retail sales data.</p>
+        <div class="model-tags">
+          <span class="tag">Ensemble</span><span class="tag">XGBoost</span><span class="tag">Random Forest</span>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#f59e0b20"/>
+            <path d="M8 20 Q12 8 16 16 Q20 24 24 12" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 class="model-name">FTGM</h3>
+        <p class="model-full">Fourier Time-Varying Grey Model</p>
+        <p class="model-desc">Grey model extended with Fourier functions for seasonal pattern capture. Data-driven order selection algorithm. Outperforms SARIMA, LSTM, MLP, and Holt-Winters on M5 competition data.</p>
+        <div class="model-tags">
+          <span class="tag">Grey System</span><span class="tag">Fourier</span><span class="tag">Seasonal</span>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#ec489920"/>
+            <circle cx="16" cy="16" r="6" stroke="#ec4899" stroke-width="2"/>
+            <circle cx="10" cy="10" r="2" fill="#ec4899"/>
+            <circle cx="22" cy="10" r="2" fill="#f472b6"/>
+            <circle cx="10" cy="22" r="2" fill="#f472b6"/>
+            <circle cx="22" cy="22" r="2" fill="#ec4899"/>
+          </svg>
+        </div>
+        <h3 class="model-name">MLP / ANN</h3>
+        <p class="model-full">Multi-Layer Perceptron / Artificial Neural Network</p>
+        <p class="model-desc">Most widely used architecture in demand forecasting literature (2017–2021). Forms a key baseline across comparative studies in supply chain and retail contexts.</p>
+        <div class="model-tags">
+          <span class="tag">Deep Learning</span><span class="tag">Baseline</span><span class="tag">Multivariate</span>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#8b5cf620"/>
+            <path d="M8 16 H24 M16 8 V24" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round"/>
+            <rect x="12" y="12" width="8" height="8" rx="2" fill="#8b5cf6" opacity="0.5"/>
+          </svg>
+        </div>
+        <h3 class="model-name">Statistical Baselines</h3>
+        <p class="model-full">ARIMA · SARIMA · Holt-Winters · ETS</p>
+        <p class="model-desc">Classical benchmarks against which ML models are evaluated. SARIMA and Holt-Winters serve as standard seasonal baselines in all time-series competition frameworks.</p>
+        <div class="model-tags">
+          <span class="tag">ARIMA</span><span class="tag">SARIMA</span><span class="tag">Exponential Smoothing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── RESEARCH SECTION ─── -->
+<section class="section section-alt" id="research">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Peer-Reviewed Research</div>
+      <h2 class="section-title">Research Papers</h2>
+      <p class="section-sub">Peer-reviewed publications spanning supply chain optimization, retail forecasting, big data analytics, and cutting-edge hybrid deep learning architectures.</p>
+    </div>
+
+    <div class="papers-grid">
+
+      <article class="paper-card paper-card-featured">
+        <div class="paper-year">2024</div>
+        <div class="paper-venue">arXiv · IEEE</div>
+        <h3 class="paper-title">MCDFN: Supply Chain Demand Forecasting via an Explainable Multi-Channel Data Fusion Network Integrating CNN, LSTM, and GRU</h3>
+        <p class="paper-authors">Md Abrar Jahin, Asef Shahriar, Md Al Amin</p>
+        <p class="paper-abstract">Introduces MCDFN, a hybrid deep learning architecture that integrates CNN, LSTM, and GRU to extract spatial and temporal features. Verified by paired t-test (p=0.05) and 10-fold cross-validation. Enhanced with ShapTime and Permutation Feature Importance for explainability.</p>
+        <div class="paper-tags">
+          <span class="ptag">CNN+LSTM+GRU</span>
+          <span class="ptag">Explainable AI</span>
+          <span class="ptag">Supply Chain</span>
+        </div>
+        <div class="paper-metrics-row">
+          <div class="paper-metric"><span class="pm-label">RMSE</span><span class="pm-val">4.86%</span></div>
+          <div class="paper-metric"><span class="pm-label">MAE</span><span class="pm-val">3.99%</span></div>
+          <div class="paper-metric"><span class="pm-label">MAPE</span><span class="pm-val">20.16%</span></div>
+        </div>
+        <a href="https://arxiv.org/abs/2405.15598" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2023</div>
+        <div class="paper-venue">IEEE WETICE</div>
+        <h3 class="paper-title">DLSTM-SCM: A Dynamic LSTM-Based Framework for Smart Supply Chain Management</h3>
+        <p class="paper-authors">Seyf Eddine Hasnaoui, Mohammed Amine Boudouaia, Samir Ouchani et al.</p>
+        <p class="paper-abstract">Proposes a framework that dynamically updates LSTM models using historical sales data and lag/rolling-window features. Evaluated on the Walmart M5 dataset. Multi-layer LSTM with lag features achieves significantly lower RMSE than single-layer baselines.</p>
+        <div class="paper-tags">
+          <span class="ptag">Dynamic LSTM</span>
+          <span class="ptag">Retail SCM</span>
+          <span class="ptag">Walmart Dataset</span>
+        </div>
+        <a href="https://doi.org/10.1109/wetice57085.2023.10477821" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2024</div>
+        <div class="paper-venue">Journal of Computer Science and Technology Studies</div>
+        <h3 class="paper-title">Revolutionizing Retail: A Hybrid Machine Learning Approach for Precision Demand Forecasting</h3>
+        <p class="paper-authors">MD Tanvir Islam, Eftekhar Hossain Ayon, Bishnu Padh Ghosh et al.</p>
+        <p class="paper-abstract">Comprehensive comparison of RF, ANN, GB, AdaBoost, XGBoost vs. the novel hybrid RF-XGBoost-LR. Stacking meta-learner combines bagging and boosting strengths. Best performance: R² = 0.9651, MAE = 0.0025.</p>
+        <div class="paper-tags">
+          <span class="ptag">Hybrid Ensemble</span>
+          <span class="ptag">XGBoost</span>
+          <span class="ptag">Retail</span>
+        </div>
+        <div class="paper-metrics-row">
+          <div class="paper-metric"><span class="pm-label">R²</span><span class="pm-val pm-green">0.9651</span></div>
+          <div class="paper-metric"><span class="pm-label">MAE</span><span class="pm-val">0.0025</span></div>
+        </div>
+        <a href="https://doi.org/10.32996/jcsts" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2024</div>
+        <div class="paper-venue">International Journal of Forecasting</div>
+        <h3 class="paper-title">Forecasting Seasonal Demand for Retail: A Fourier Time-Varying Grey Model</h3>
+        <p class="paper-authors">Lili Ye, Naiming Xie, John E. Boylan et al.</p>
+        <p class="paper-abstract">Proposes FTGM extending grey models with Fourier functions for seasonal variation capture. Data-driven order selection. Outperforms SARIMA, HWES, MLP, LSTM, and DGSM on M5 competition data (70 monthly product demand time series, 7 departments, 10 stores).</p>
+        <div class="paper-tags">
+          <span class="ptag">Grey Model</span>
+          <span class="ptag">Fourier</span>
+          <span class="ptag">M5 Competition</span>
+        </div>
+        <a href="https://doi.org/10.1016/j.ijforecast.2023.12.006" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2022</div>
+        <div class="paper-venue">Procedia CIRP</div>
+        <h3 class="paper-title">Review and Analysis of Artificial Intelligence Methods for Demand Forecasting in Supply Chain Management</h3>
+        <p class="paper-authors">Mario Angos Mediavilla, Fabian Dietrich, Daniel Palm</p>
+        <p class="paper-abstract">Analyzes 23 AI methods published 2017–2021 using Web of Science, IEEE Explore, and Springer. Classifies by dimensionality, data volume, and forecast horizon. Identifies trend toward deep learning (MLP, LSTM, ANN) and gap in "collaborative forecasting".</p>
+        <div class="paper-tags">
+          <span class="ptag">Literature Review</span>
+          <span class="ptag">23 Methods</span>
+          <span class="ptag">Classification</span>
+        </div>
+        <a href="https://doi.org/10.1016/j.procir.2022.05.119" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2020</div>
+        <div class="paper-venue">Journal of Big Data</div>
+        <h3 class="paper-title">Predictive Big Data Analytics for Supply Chain Demand Forecasting: Methods, Applications, and Research Opportunities</h3>
+        <p class="paper-authors">Mahya Seyedan, Fereshteh Mafakheri</p>
+        <p class="paper-abstract">Surveys predictive BDA in SCM demand forecasting (2005–2019). Classifies into 7 technique families. Identifies neural networks and regression as most common. Highlights major gap: no BDA research on closed-loop supply chains (CLSCs).</p>
+        <div class="paper-tags">
+          <span class="ptag">Big Data Analytics</span>
+          <span class="ptag">Survey</span>
+          <span class="ptag">CLSC Gap</span>
+        </div>
+        <a href="https://doi.org/10.1186/s40537-020-00329-2" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2020</div>
+        <div class="paper-venue">International Journal of Forecasting</div>
+        <h3 class="paper-title">Daily Retail Demand Forecasting Using Machine Learning with Emphasis on Calendric Special Days</h3>
+        <p class="paper-authors">J. Huber, H. Stuckenschmidt</p>
+        <p class="paper-abstract">Investigates calendric effects (holidays, promotions, special events) on retail demand forecasting accuracy. Demonstrates that incorporating event-calendar features into ML models significantly improves daily-granularity predictions.</p>
+        <div class="paper-tags">
+          <span class="ptag">Retail</span>
+          <span class="ptag">Calendric Effects</span>
+          <span class="ptag">Daily Granularity</span>
+        </div>
+        <a href="https://doi.org/10.1016/j.ijforecast.2020.02.006" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+      <article class="paper-card">
+        <div class="paper-year">2023</div>
+        <div class="paper-venue">MDPI Biomimetics</div>
+        <h3 class="paper-title">Deep Learning Combinatorial Models for Intelligent Supply Chain Demand Forecasting</h3>
+        <p class="paper-authors">X. Ma, M. Li, J. Tong, X. Feng</p>
+        <p class="paper-abstract">Explores combinatorial deep learning architectures for SCM demand forecasting. Evaluates CNN, LSTM, GRU combinations in a systematic fashion, identifying optimal fusion strategies for multi-horizon supply chain predictions.</p>
+        <div class="paper-tags">
+          <span class="ptag">Combinatorial DL</span>
+          <span class="ptag">Multi-horizon</span>
+          <span class="ptag">SCM</span>
+        </div>
+        <a href="https://doi.org/10.3390/biomimetics8030312" target="_blank" class="paper-link">Read Paper →</a>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── BENCHMARK TABLE ─── -->
+<section class="section" id="benchmarks">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Performance Comparison</div>
+      <h2 class="section-title">Model Benchmarks</h2>
+      <p class="section-sub">Compiled from peer-reviewed results across supply chain and retail demand forecasting datasets — traditional and foundation models side by side.</p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="bench-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>Type</th>
+            <th>RMSE ↓</th>
+            <th>MAE ↓</th>
+            <th>MAPE ↓</th>
+            <th>R² ↑</th>
+            <th>Dataset</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-best">
+            <td><strong>TimeGPT-1</strong> <span class="best-badge">Foundation</span></td>
+            <td>Transformer (Zero-Shot)</td>
+            <td class="metric-good">SOTA</td>
+            <td class="metric-good">SOTA</td>
+            <td class="metric-good">SOTA</td>
+            <td>—</td>
+            <td>Multiple (100B pts)</td>
+          </tr>
+          <tr class="row-best">
+            <td><strong>MCDFN</strong> <span class="best-badge">Best Hybrid</span></td>
+            <td>CNN+LSTM+GRU</td>
+            <td class="metric-good">4.86%</td>
+            <td class="metric-good">3.99%</td>
+            <td class="metric-good">20.16%</td>
+            <td>—</td>
+            <td>SC Retail (BD)</td>
+          </tr>
+          <tr>
+            <td><strong>Chronos</strong></td>
+            <td>T5 Transformer (Zero-Shot)</td>
+            <td class="metric-good">Best WQL</td>
+            <td class="metric-good">Best WQL</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Multiple (0-shot)</td>
+          </tr>
+          <tr>
+            <td><strong>RF-XGBoost-LR</strong></td>
+            <td>Hybrid Ensemble</td>
+            <td>—</td>
+            <td>0.0025</td>
+            <td>—</td>
+            <td class="metric-good">0.9651</td>
+            <td>Walmart US</td>
+          </tr>
+          <tr>
+            <td><strong>FTGM</strong></td>
+            <td>Grey + Fourier</td>
+            <td class="metric-good">Rank #1</td>
+            <td class="metric-good">Rank #1</td>
+            <td>—</td>
+            <td>—</td>
+            <td>M5 Competition</td>
+          </tr>
+          <tr>
+            <td><strong>DLSTM-SCM</strong></td>
+            <td>Dynamic LSTM</td>
+            <td>Improved</td>
+            <td>Improved</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Walmart M5</td>
+          </tr>
+          <tr class="row-baseline">
+            <td>Vanilla LSTM</td>
+            <td>RNN</td>
+            <td>Higher</td>
+            <td>Higher</td>
+            <td>Higher</td>
+            <td>—</td>
+            <td>Multiple</td>
+          </tr>
+          <tr class="row-baseline">
+            <td>SARIMA</td>
+            <td>Statistical</td>
+            <td>26.6% worse than CNN</td>
+            <td>—</td>
+            <td>—</td>
+            <td>—</td>
+            <td>M5 Competition</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WAITLIST CTA ─── -->
+<section class="waitlist-section" id="waitlist">
+  <div class="wl-bg-glow wl-bg-glow-1"></div>
+  <div class="wl-bg-glow wl-bg-glow-2"></div>
+  <div class="container">
+    <div class="wl-inner">
+      <div class="wl-left">
+        <div class="section-badge" style="text-align:left;display:inline-block">Early Access · Limited Spots</div>
+        <h2 class="wl-title">Get ahead of the<br/><span class="gradient-text">forecasting curve</span></h2>
+        <p class="wl-sub">Join researchers and supply chain teams who are building with the next generation of AI forecasting models. Select your model of interest and we'll keep you in the loop.</p>
+        <div class="wl-social-proof">
+          <div class="wl-avatars">
+            <span class="wl-av wl-av-1">RS</span>
+            <span class="wl-av wl-av-2">PA</span>
+            <span class="wl-av wl-av-3">MJ</span>
+            <span class="wl-av wl-av-4">+</span>
+          </div>
+          <span class="wl-proof-text">Join <strong id="wl-count">—</strong> people already on the waitlist</span>
+        </div>
+      </div>
+      <div class="wl-right">
+        <div class="wl-form-card">
+          <h3 class="wl-form-title">Reserve your spot</h3>
+          <form id="inlineWaitlistForm" onsubmit="submitInlineWaitlist(event)" novalidate>
+            <div class="form-group">
+              <input class="form-input" type="email" id="il-email" placeholder="Work email address" required autocomplete="email"/>
+              <div class="form-error" id="il-email-error"></div>
+            </div>
+            <div class="form-group">
+              <select class="form-input form-select" id="il-model" required>
+                <option value="">Which model interests you most? *</option>
+                <option value="TimeGPT">⚡ TimeGPT — Foundation model</option>
+                <option value="StatisticalGPT">📊 StatisticalGPT — LLM + stats fusion</option>
+                <option value="Chronos">🔮 Chronos — Probabilistic foundation</option>
+                <option value="MOIRAI">🌐 MOIRAI — Unified time series</option>
+                <option value="MCDFN">🧠 MCDFN — CNN+LSTM+GRU hybrid</option>
+                <option value="Custom / Other">✦ Custom / Other</option>
+              </select>
+              <div class="form-error" id="il-model-error"></div>
+            </div>
+            <button class="btn btn-primary btn-full" type="submit" id="il-submit">
+              <span id="il-btn-text">Join Waitlist</span>
+              <svg id="il-spinner" class="spinner hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+            </button>
+          </form>
+          <div id="il-success" class="il-success hidden">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>You're on the list! We'll be in touch soon.</span>
+          </div>
+          <p class="form-privacy" style="margin-top:12px">No spam. Unsubscribe anytime.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── KEY FINDINGS SECTION ─── -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-badge">Research Insights</div>
+      <h2 class="section-title">Key Findings</h2>
+    </div>
+    <div class="findings-grid">
+      <div class="finding-card">
+        <div class="finding-icon finding-icon-blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h3>Hybrid Models Dominate</h3>
+        <p>Hybrid architectures (CNN+LSTM+GRU, RF+XGBoost+LR) consistently outperform single-architecture models across all studied datasets and error metrics.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-icon finding-icon-purple">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h3>Lag Features Are Critical</h3>
+        <p>Adding lag features (1-day, 7-day, 28-day) and rolling window statistics to LSTM models reduces both training and validation loss significantly across all SCM datasets.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-icon finding-icon-teal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3zM3 9h18M3 15h18M9 3v18"/></svg>
+        </div>
+        <h3>Calendric Events Matter</h3>
+        <p>Incorporating holiday calendars, promotional events, and special-day indicators into ML models significantly improves daily retail demand forecasting accuracy.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-icon finding-icon-green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <h3>Exogenous Variables = 50% RMSE Drop</h3>
+        <p>Adding exogenous variables (weather, macroeconomic indicators, location data) to deep learning models reduces RMSE by up to 50.9%, validating multivariate over univariate approaches.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-icon finding-icon-orange">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3>Collaborative Forecasting Gap</h3>
+        <p>Literature almost entirely focuses on retailer-perspective forecasting. Upstream "collaborative forecasting" involving suppliers and manufacturers remains a critical research gap.</p>
+      </div>
+      <div class="finding-card">
+        <div class="finding-icon finding-icon-pink">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        </div>
+        <h3>Foundation Models as Zero-Shot Forecasters</h3>
+        <p>TimeGPT, Chronos, and MOIRAI are redefining the benchmark — achieving near-supervised accuracy without any task-specific training, lowering the barrier to AI forecasting for SMEs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="url(#grad-footer)"/>
+            <path d="M8 20L14 12L19 17L24 9" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="24" cy="9" r="2" fill="#00e5ff"/>
+            <defs>
+              <linearGradient id="grad-footer" x1="0" y1="0" x2="32" y2="32">
+                <stop stop-color="#6366f1"/>
+                <stop offset="1" stop-color="#0ea5e9"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <span class="nav-brand">Notion Demand<span class="nav-brand-accent"> Research</span></span>
+        </a>
+        <p class="footer-tagline">AI-powered demand forecasting research platform. Unifying foundation models and deep learning for supply chain intelligence.</p>
+      </div>
+      <div class="footer-links-cols">
+        <div class="footer-col">
+          <div class="footer-col-title">Research</div>
+          <a href="#research" class="footer-link">Papers</a>
+          <a href="#benchmarks" class="footer-link">Benchmarks</a>
+          <a href="#models" class="footer-link">Models</a>
+          <a href="#foundation" class="footer-link">Foundation Models</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Foundation Models</div>
+          <a href="#foundation" class="footer-link">TimeGPT</a>
+          <a href="#foundation" class="footer-link">StatisticalGPT</a>
+          <a href="#foundation" class="footer-link">Chronos</a>
+          <a href="#foundation" class="footer-link">MOIRAI</a>
+        </div>
+        <div class="footer-col">
+          <div class="footer-col-title">Early Access</div>
+          <a href="#" onclick="openWaitlist();return false;" class="footer-link">Join Waitlist</a>
+          <a href="#waitlist" class="footer-link">Model Selection</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2024–25 Notion Demand Research · Peer-Reviewed Research</span>
+      <span>team@notiondemand.com · Open Science</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ─── WAITLIST DATA STORE (localStorage) ─── */
+const WL_KEY = 'demandion_waitlist';
+
+function getWaitlist() {
+  try { return JSON.parse(localStorage.getItem(WL_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveEntry(entry) {
+  const list = getWaitlist();
+  // Deduplicate by email
+  const exists = list.findIndex(e => e.email.toLowerCase() === entry.email.toLowerCase());
+  if (exists >= 0) {
+    list[exists] = { ...list[exists], ...entry, updatedAt: entry.createdAt };
+  } else {
+    list.push(entry);
+  }
+  localStorage.setItem(WL_KEY, JSON.stringify(list));
+  updateWaitlistCount();
+}
+
+function updateWaitlistCount() {
+  const count = getWaitlist().length;
+  document.querySelectorAll('#wl-count').forEach(el => {
+    el.textContent = count > 0 ? count : '—';
+  });
+}
+
+/* ─── MODAL ─── */
+function openWaitlist() {
+  document.getElementById('waitlistBackdrop').classList.add('modal-open');
+  document.body.style.overflow = 'hidden';
+  // Reset to form view
+  document.getElementById('modal-form-view').classList.remove('hidden');
+  document.getElementById('modal-success-view').classList.add('hidden');
+  clearErrors();
+}
+
+function openWaitlistWith(modelName) {
+  openWaitlist();
+  // Pre-select the model radio
+  const radios = document.querySelectorAll('input[name="model"]');
+  radios.forEach(r => {
+    r.checked = r.value === modelName;
+    if (r.checked) r.closest('.model-option').classList.add('model-option-selected');
+    else r.closest('.model-option').classList.remove('model-option-selected');
+  });
+}
+
+function closeWaitlist(e) {
+  if (e.target === document.getElementById('waitlistBackdrop')) closeWaitlistBtn();
+}
+function closeWaitlistBtn() {
+  document.getElementById('waitlistBackdrop').classList.remove('modal-open');
+  document.body.style.overflow = '';
+}
+
+function clearErrors() {
+  document.querySelectorAll('.form-error').forEach(el => { el.textContent = ''; el.style.display = 'none'; });
+}
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+/* ─── MODEL OPTION RADIO STYLING ─── */
+document.querySelectorAll('.model-option input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('.model-option').forEach(el => el.classList.remove('model-option-selected'));
+    radio.closest('.model-option').classList.add('model-option-selected');
+  });
+});
+
+/* ─── MODAL FORM SUBMIT ─── */
+function submitWaitlist(e) {
+  e.preventDefault();
+  clearErrors();
+  const email = document.getElementById('wl-email').value.trim();
+  const name  = document.getElementById('wl-name').value.trim();
+  const model = document.querySelector('input[name="model"]:checked');
+  const usecase = document.getElementById('wl-usecase').value;
+
+  let valid = true;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('email-error', 'Please enter a valid email address.');
+    valid = false;
+  }
+  if (!model) {
+    showError('model-error', 'Please select a model you\'re interested in.');
+    valid = false;
+  }
+  if (!valid) return;
+
+  // Simulate async
+  const btn = document.getElementById('wl-submit');
+  document.getElementById('wl-btn-text').style.opacity = '0';
+  document.getElementById('wl-spinner').classList.remove('hidden');
+  btn.disabled = true;
+
+  setTimeout(() => {
+    const entry = {
+      email, name, model: model.value, usecase,
+      source: 'modal',
+      createdAt: new Date().toISOString()
+    };
+    saveEntry(entry);
+
+    // Show success
+    document.getElementById('modal-form-view').classList.add('hidden');
+    document.getElementById('modal-success-view').classList.remove('hidden');
+    document.getElementById('success-email').textContent = email;
+    document.getElementById('success-model-chip').textContent = '✦ ' + model.value;
+
+    // Reset button
+    btn.disabled = false;
+    document.getElementById('wl-btn-text').style.opacity = '1';
+    document.getElementById('wl-spinner').classList.add('hidden');
+  }, 900);
+}
+
+/* ─── INLINE FORM SUBMIT ─── */
+function submitInlineWaitlist(e) {
+  e.preventDefault();
+  clearErrors();
+  const email = document.getElementById('il-email').value.trim();
+  const model = document.getElementById('il-model').value;
+
+  let valid = true;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('il-email-error', 'Please enter a valid email address.');
+    valid = false;
+  }
+  if (!model) {
+    showError('il-model-error', 'Please select a model.');
+    valid = false;
+  }
+  if (!valid) return;
+
+  const btn = document.getElementById('il-submit');
+  document.getElementById('il-btn-text').style.opacity = '0';
+  document.getElementById('il-spinner').classList.remove('hidden');
+  btn.disabled = true;
+
+  setTimeout(() => {
+    const entry = { email, model, source: 'inline', createdAt: new Date().toISOString() };
+    saveEntry(entry);
+
+    document.getElementById('inlineWaitlistForm').classList.add('hidden');
+    document.getElementById('il-success').classList.remove('hidden');
+
+    btn.disabled = false;
+    document.getElementById('il-btn-text').style.opacity = '1';
+    document.getElementById('il-spinner').classList.add('hidden');
+  }, 900);
+}
+
+/* ─── NAV SCROLL ─── */
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('navbar');
+  nav.classList.toggle('nav-scrolled', window.scrollY > 40);
+});
+
+/* ─── SMOOTH SCROLL ─── */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  });
+});
+
+/* ─── CODE TAB SWITCH ─── */
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.add('tab-hidden'));
+  btn.classList.add('tab-active');
+  document.getElementById(tabId).classList.remove('tab-hidden');
+}
+
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('.code-body').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+
+/* ─── INIT ─── */
+updateWaitlistCount();
+
+/* ─── EXPORT UTILITY (accessible via console) ─── */
+window.exportWaitlist = function() {
+  const list = getWaitlist();
+  if (!list.length) { alert('No waitlist entries yet.'); return; }
+  const headers = ['Email', 'Name', 'Model', 'Use Case', 'Source', 'Created At'];
+  const rows = list.map(e => [e.email, e.name||'', e.model, e.usecase||'', e.source, e.createdAt]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'demandion_waitlist.csv'; a.click();
+  URL.revokeObjectURL(url);
+};
+
+window.viewWaitlist = function() {
+  const list = getWaitlist();
+  console.table(list);
+  return list;
+};
+
+/* ─── AI ADVISOR ─── */
+function fillExample(btn) {
+  document.getElementById('advisor-input').value = btn.dataset.text;
+  document.getElementById('advisor-input').focus();
+}
+
+function runAdvisor() {
+  const raw = document.getElementById('advisor-input').value.trim();
+  if (!raw || raw.length < 20) {
+    document.getElementById('advisor-input').style.borderColor = '#f87171';
+    document.getElementById('advisor-input').focus();
+    setTimeout(() => document.getElementById('advisor-input').style.borderColor = '', 1500);
+    return;
+  }
+  const btn = document.getElementById('advisor-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="spinner" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Analysing...';
+
+  setTimeout(() => {
+    const rec = analyseInput(raw);
+    renderRecommendation(rec);
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20z"/><path d="M12 8v4l3 3"/></svg> Get Recommendation';
+    document.getElementById('advisor-output').style.display = 'block';
+    document.getElementById('advisor-output').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 1100);
+}
+
+function analyseInput(text) {
+  const t = text.toLowerCase();
+
+  // ── Signal Detection ──────────────────────────────────────────────────────
+  const signals = {
+    // Demand type
+    sparse:        /sparse|intermittent|lumpy|sporadic|irregular|few orders|low volume|rare|slow mov|long.tail|tail sku|occasional|erratic/.test(t),
+    seasonal:      /season|holiday|christmas|summer|winter|peak|periodic|cyclic|weekly pattern|monthly pattern|annual/.test(t),
+    // Domain
+    retail:        /retail|store|shop|pos|point of sale|supermarket|outlet|merchandise/.test(t),
+    ecommerce:     /e-commerce|ecommerce|online|marketplace|shopify|amazon|d2c|dtc/.test(t),
+    fmcg:          /fmcg|consumer goods|cpg|food|grocery|beverage|packaged/.test(t),
+    supplyChain:   /supply chain|scm|procurement|inventory|warehouse|logistics|replenishment|lead time/.test(t),
+    manufacturing: /manufactur|production|factory|assembly|plant|operations/.test(t),
+    financial:     /financ|stock|market|revenue|profit|sales forecast|cash flow/.test(t),
+    // Team & capability
+    noML:          /no ml|no data science|no team|basic|simple|non-technical|no expertise|limited skill|non technical|no python|no engineer/.test(t),
+    hasTeam:       /data science|ml team|engineering|python|pytorch|tensorflow|in-house|expert|phd|researcher|data engineer/.test(t),
+    // Data richness
+    limitedData:   /6 month|few months|small dataset|limited data|not much data|little data|less than a year|new business|startup|new product|pilot/.test(t),
+    richData:      /years of|3 year|5 year|decade|historical|long history|abundant|multiple years|rich data/.test(t),
+    // Requirements
+    explainability: /explain|interpret|stakeholder|why|reason|transparent|xai|shap|feature importan/.test(t),
+    realtime:       /real.time|streaming|live|online learning|dynamic|continuous/.test(t),
+    longHorizon:    /long.term|12 month|annual|year ahead|long horizon|strategic planning/.test(t),
+    shortHorizon:   /short.term|daily|weekly|next week|next month|30 day|operational/.test(t),
+    zeroShot:       /zero.shot|no training|no fine.tun|out of box|plug and play|api|quick start|fast deploy/.test(t),
+    multivariate:   /multivariate|multiple feature|exogenous|external|weather|promo|price|multiple variable|causal/.test(t),
+    // NEW: Hierarchy signals
+    hierarchy:      /hierarch|national|regional|district|store level|country level|aggregat|reconcil|top.down|bottom.up|business unit|bu |geography|channel level|roll.up|category level|multi.level/.test(t),
+    // NEW: Forecast stability constraints
+    stability:      /stabil|consistent forecast|low variance|reliable|production ready|smooth forecast|forecast volatil|retraining|forecast change|planner|s&op|sales and operation/.test(t),
+    // NEW: Large SKU portfolio
+    largeSKU:       /thousand.*sku|hundreds.*sku|large catalog|sku portfolio|many product|10,000|100,000|million.*sku|sku count|product range|wide assortment/.test(t),
+  };
+
+  // ── Derived Decision Flags ────────────────────────────────────────────────
+  // Deep learning is only justified with rich data AND an ML team
+  const justifyDL       = signals.richData && signals.hasTeam && !signals.noML;
+  // Foundation / zero-shot path: no team, limited data, or explicit API request
+  const justifyFoundation = signals.zeroShot || (signals.noML && !signals.hasTeam) || (signals.limitedData && !signals.hasTeam);
+  const needsReconciliation = signals.hierarchy;
+  const needsTailModel  = signals.sparse;
+  // Stability risk is relevant when DL is in the picture and stability is mentioned
+  const stabilityRisk   = signals.stability;
+
+  // ── Layer 1: Global Model (GBM-first logic) ───────────────────────────────
+  let layer1;
+
+  if (justifyFoundation) {
+    // Path A — Foundation / zero-shot
+    if (signals.seasonal && signals.limitedData) {
+      layer1 = {
+        model: 'FTGM (Fourier Grey Model)',
+        icon: '〰️', color: '#ec4899',
+        why: 'When historical data is sparse and seasonal cycles dominate, the Fourier Grey Model is the strongest choice. It models seasonal harmonics through Fourier decomposition and handles short series (under 2 years) better than SARIMA or LSTM. Validated on M5 competition data.',
+        framework: 'statsforecast (Nixtla) · Python grey-models · AutoARIMA baseline',
+        conditions: ['Series length < 104 weeks', 'Seasonal cycle clearly present', 'No GPU infrastructure needed'],
+      };
+    } else {
+      layer1 = {
+        model: 'TimeGPT',
+        icon: '⚡', color: '#6366f1',
+        why: 'Foundation model with zero-shot generalisation — no training pipeline required. TimeGPT handles heterogeneous SKU portfolios via a single API call, making it the fastest path to production when there is no in-house ML team or when time-to-deployment is the primary constraint.',
+        framework: 'Nixtla TimeGPT API · timegpt-1 · Python SDK',
+        conditions: ['No ML team required', 'API-ready in hours not weeks', 'Handles cold-start SKUs natively'],
+      };
+    }
+  } else if (justifyDL) {
+    // Path B — Deep learning (only when data + team justify it)
+    if (signals.supplyChain || signals.manufacturing || signals.realtime) {
+      layer1 = {
+        model: 'DLSTM-SCM',
+        icon: '🔁', color: '#f59e0b',
+        why: 'Dynamic LSTM engineered for supply chain volatility. Lag features and rolling-window inputs are pre-built for distribution drift. Recommended only when per-SKU series length exceeds 104 weeks — below this threshold, GBM with lag features outperforms LSTM on structured tabular data. Requires a retraining pipeline with monitoring.',
+        framework: 'NeuralForecast (Nixtla) · PyTorch · MLflow for experiment tracking',
+        conditions: ['Per-SKU history > 104 weeks required', 'ML engineering team in place', 'Retraining cadence defined'],
+      };
+    } else {
+      layer1 = {
+        model: 'MCDFN (CNN + LSTM + GRU)',
+        icon: '🧠', color: '#00e5ff',
+        why: 'Multi-channel deep fusion model delivering state-of-the-art accuracy on multivariate retail and e-commerce series. The CNN extracts local patterns, LSTM captures long-range dependencies, and GRU handles gating — together they outperform single-architecture baselines by 8–15% MAPE on benchmark datasets. Justified only with 3+ years of per-SKU history.',
+        framework: 'NeuralForecast (Nixtla) · PyTorch · scikit-learn preprocessing',
+        conditions: ['Per-SKU history > 3 years preferred', 'Multivariate inputs recommended', 'GPU infrastructure needed'],
+      };
+    }
+  } else {
+    // Path C — DEFAULT: GBM ensemble (enterprise default, lower friction)
+    let why = 'Gradient boosting ensemble (Random Forest + XGBoost + Linear Regression stacking) is the enterprise default for structured demand forecasting. ';
+    if (signals.fmcg || signals.retail) {
+      why += 'In FMCG and retail, feature-engineered lag variables, calendar dummies, and promotional indicators give GBM a consistent edge over deep learning — variance is lower, deployment friction is minimal, and retraining is stable. ';
+    }
+    if (signals.explainability) {
+      why += 'SHAP-based feature importance provides the stakeholder-facing explainability that S&OP and commercial teams require. ';
+    }
+    if (signals.supplyChain) {
+      why += 'Lead time, inventory, and procurement signals integrate naturally as tabular features. ';
+    }
+    why += 'Start here — introduce deep learning only after GBM establishes a strong, audited baseline.';
+
+    layer1 = {
+      model: 'RF-XGBoost-LR Ensemble',
+      icon: '🌲', color: '#10b981',
+      why,
+      framework: 'MLForecast (Nixtla) · scikit-learn · XGBoost · LightGBM · SHAP',
+      conditions: ['Works across all data volumes', 'No GPU required', 'SHAP explainability built-in', 'Stable across retraining cycles'],
+    };
+  }
+
+  // ── Layer 2: Hierarchical Reconciliation (conditional) ────────────────────
+  let layer2 = null;
+  if (needsReconciliation) {
+    const useMinT = signals.hasTeam && !signals.noML;
+    layer2 = {
+      method: useMinT ? 'MinTrace (MinT) Reconciliation' : 'Bottom-Up Aggregation',
+      icon: '🔗', color: '#6366f1',
+      why: useMinT
+        ? 'MinTrace (MinT) minimises the trace of the reconciliation error covariance — producing hierarchically coherent forecasts at national, regional, and store levels simultaneously. It is mathematically optimal but requires matrix inversion; suitable when you have an ML team managing the pipeline.'
+        : 'Bottom-Up aggregation is robust, interpretable, and requires no matrix operations — store-level forecasts are summed to regional and national levels. Safest default when the team is not ML-specialised. Coherence is guaranteed by construction.',
+      framework: useMinT
+        ? 'HierarchicalForecast (Nixtla) · MinT · scipy'
+        : 'HierarchicalForecast (Nixtla) · BottomUp · pandas aggregation',
+      conditions: [
+        useMinT ? 'Apply MinT when hierarchy depth ≥ 3 levels' : 'Bottom-Up for 2-level hierarchies (store → national)',
+        'Post-hoc reconciliation on any base forecast',
+        'Coherence: aggregate == sum of disaggregate always holds',
+        'Run reconciliation after each base model retrain',
+      ],
+    };
+  }
+
+  // ── Layer 3: Tail / Sparse SKU Model (conditional) ───────────────────────
+  let layer3 = null;
+  if (needsTailModel) {
+    layer3 = {
+      model: 'Croston + Tweedie Loss',
+      icon: '🎯', color: '#f59e0b',
+      why: "Croston's method is purpose-built for intermittent demand — it decouples non-zero demand size from inter-demand intervals, avoiding the bias that afflicts ARIMA and standard regression on zero-inflated series. Pair with Tweedie loss (p ≈ 1.5) in XGBoost for probabilistic tail forecasts. Apply this layer whenever a SKU has fewer than 30% non-zero periods.",
+      framework: 'StatsForecast (Nixtla) · Croston Optimised (CROST) · XGBoost Tweedie loss',
+      conditions: [
+        'Activate for SKUs with < 30% non-zero periods',
+        "Croston Optimised (CROST) over standard Croston",
+        'Tweedie XGBoost for probabilistic quantile outputs',
+        'Evaluate with MASE — not MAPE (undefined on zero actuals)',
+      ],
+    };
+  }
+
+  // ── Stability Warning (conditional on DL as primary) ─────────────────────
+  const isDLPrimary = layer1.model.includes('DLSTM') || layer1.model.includes('MCDFN');
+  let stabilityWarning = null;
+  if (stabilityRisk && isDLPrimary) {
+    stabilityWarning = {
+      risk: 'Forecast Stability Risk Detected',
+      detail: 'DLSTM and MCDFN models can produce materially different forecasts across retraining cycles — especially under demand pattern shifts. This retraining variance frustrates supply planners and undermines S&OP trust in model outputs.',
+      mitigations: [
+        'Apply exponential smoothing on forecast output across retraining cycles',
+        'Set learning rate decay and early stopping — cap at 50 epochs',
+        'Monitor Forecast Revision Index (FRI) per SKU per cycle',
+        'Version-lock model weights; only promote after back-test stability check',
+        'Consider switching to GBM if FRI > 15% consistently',
+      ],
+    };
+  }
+
+  // ── Decision Logic Summary ────────────────────────────────────────────────
+  const decisionTree = [
+    `Deploy ${layer1.model} as the global forecasting layer across the full SKU portfolio`,
+    needsReconciliation
+      ? `Apply ${layer2.method} post-hoc to ensure coherent forecasts across hierarchy levels`
+      : 'No hierarchy detected — flat per-SKU forecasting is sufficient for now',
+    needsTailModel
+      ? 'Route tail SKUs (< 30% non-zero periods) to a dedicated Croston / Tweedie pipeline'
+      : 'Monitor SKU fill rates; introduce Croston if sparsity rate exceeds 30% of catalogue',
+    isDLPrimary
+      ? 'Only maintain deep learning if per-SKU history > 104 weeks and retraining pipeline is stable'
+      : 'Introduce DLSTM or MCDFN only after GBM baseline is audited and data richness is confirmed',
+    signals.explainability
+      ? 'Use SHAP feature importance outputs for S&OP and commercial stakeholder reporting'
+      : 'Track RMSE, MASE, and CRPS — switch primary model only if challenger beats incumbent by > 5%',
+  ];
+
+  // ── Detected Context Labels ───────────────────────────────────────────────
+  const detectedContext = [
+    signals.retail        && 'Retail',
+    signals.ecommerce     && 'E-commerce',
+    signals.fmcg          && 'FMCG / CPG',
+    signals.supplyChain   && 'Supply Chain',
+    signals.manufacturing && 'Manufacturing',
+    signals.financial     && 'Financial',
+    signals.seasonal      && 'Seasonal Patterns',
+    signals.sparse        && 'Sparse / Intermittent Demand',
+    signals.hierarchy     && 'Hierarchical Forecasting',
+    signals.stability     && 'Forecast Stability Constraint',
+    signals.limitedData   && 'Limited Historical Data',
+    signals.richData      && 'Rich Historical Data (3+ yrs)',
+    signals.explainability && 'Explainability Required',
+    signals.noML          && 'No In-house ML Team',
+    signals.hasTeam       && 'In-house ML Team',
+    signals.realtime      && 'Real-time / Streaming',
+    signals.multivariate  && 'Exogenous Variables',
+    signals.longHorizon   && 'Long-horizon Forecasting',
+    signals.zeroShot      && 'Zero-shot / API Deployment',
+    signals.largeSKU      && 'Large SKU Catalogue',
+  ].filter(Boolean);
+
+  return { layer1, layer2, layer3, stabilityWarning, decisionTree, detectedContext, signals };
+}
+
+function renderRecommendation(rec) {
+  const { layer1, layer2, layer3, stabilityWarning, decisionTree, detectedContext } = rec;
+
+  const contextChips = detectedContext.length
+    ? detectedContext.map(c => `<span class="rec-context-chip">${c}</span>`).join('')
+    : '<span class="rec-context-chip">General forecasting</span>';
+
+  const condBadges = (arr) => arr.map(c => `<span class="rec-condition-badge">&#10003; ${c}</span>`).join('');
+
+  // Layer 1 — always shown
+  const layer1HTML = `
+    <div class="rec-layer-card rec-layer-1" style="--layer-color:${layer1.color}">
+      <div class="rec-layer-header">
+        <div class="rec-layer-badge">Layer 1</div>
+        <div class="rec-layer-title">
+          <span class="rec-layer-icon">${layer1.icon}</span>
+          Global Forecasting Model &mdash; ${layer1.model}
+        </div>
+      </div>
+      <div class="rec-why">
+        <div class="rec-why-label">Strategic rationale</div>
+        <p>${layer1.why}</p>
+      </div>
+      <div class="rec-framework-row">
+        <div class="rec-fw-label">Framework</div>
+        <div class="rec-fw-pill">${layer1.framework}</div>
+      </div>
+      <div class="rec-conditions">${condBadges(layer1.conditions)}</div>
+    </div>`;
+
+  // Layer 2 — hierarchical reconciliation
+  const layer2HTML = layer2 ? `
+    <div class="rec-layer-card rec-layer-2">
+      <div class="rec-layer-header">
+        <div class="rec-layer-badge">Layer 2</div>
+        <div class="rec-layer-title">
+          <span class="rec-layer-icon">🔗</span>
+          Hierarchical Reconciliation &mdash; ${layer2.method}
+        </div>
+      </div>
+      <div class="rec-why">
+        <div class="rec-why-label">Why reconciliation is non-negotiable here</div>
+        <p>${layer2.why}</p>
+      </div>
+      <div class="rec-framework-row">
+        <div class="rec-fw-label">Framework</div>
+        <div class="rec-fw-pill">${layer2.framework}</div>
+      </div>
+      <div class="rec-conditions">${condBadges(layer2.conditions)}</div>
+    </div>` : '';
+
+  // Layer 3 — sparse / tail SKU model
+  const layer3HTML = layer3 ? `
+    <div class="rec-layer-card rec-layer-3">
+      <div class="rec-layer-header">
+        <div class="rec-layer-badge">Layer 3</div>
+        <div class="rec-layer-title">
+          <span class="rec-layer-icon">🎯</span>
+          Tail / Sparse SKU Model &mdash; ${layer3.model}
+        </div>
+      </div>
+      <div class="rec-why">
+        <div class="rec-why-label">Why a separate model for intermittent demand</div>
+        <p>${layer3.why}</p>
+      </div>
+      <div class="rec-framework-row">
+        <div class="rec-fw-label">Framework</div>
+        <div class="rec-fw-pill">${layer3.framework}</div>
+      </div>
+      <div class="rec-conditions">${condBadges(layer3.conditions)}</div>
+    </div>` : '';
+
+  // Stability warning
+  const stabilityHTML = stabilityWarning ? `
+    <div class="rec-stability-warning">
+      <div class="rec-stability-header">
+        <span>&#9888;&#65039;</span>
+        <strong>${stabilityWarning.risk}</strong>
+      </div>
+      <p>${stabilityWarning.detail}</p>
+      <div class="rec-stability-mitigations">
+        ${stabilityWarning.mitigations.map(m => `<div class="rec-mitigation-item">&rarr; ${m}</div>`).join('')}
+      </div>
+    </div>` : '';
+
+  // Decision logic
+  const decisionHTML = `
+    <div class="rec-decision-tree">
+      <div class="rec-steps-label">Architecture Decision Logic</div>
+      ${decisionTree.map((d, i) => `
+        <div class="rec-decision-item">
+          <span class="rec-decision-num">${i + 1}</span>
+          <span>${d}</span>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('advisor-output-inner').innerHTML = `
+    <div class="rec-detected">
+      <span class="rec-detected-label">Signals detected:</span>
+      <div class="rec-context-chips">${contextChips}</div>
+    </div>
+    <div class="rec-architecture-label">Recommended Forecasting Architecture</div>
+    ${layer1HTML}
+    ${layer2HTML}
+    ${layer3HTML}
+    ${stabilityHTML}
+    ${decisionHTML}
+  `;
+}
+</script>
+
+</body>
+</html>
