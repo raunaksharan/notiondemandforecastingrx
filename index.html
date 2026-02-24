@@ -1151,13 +1151,13 @@ document.querySelectorAll('.model-option input[type="radio"]').forEach(radio => 
   });
 });
 
-/* ─── SHEETS ENDPOINT ─── */
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxMvNzG_1loDmugZEyVDvGFpkUsipc97iZO6AI54kbt_EfcLEGZprDsE0G0uC5aTfQU/exec';
+/* ─── FORMSPREE ENDPOINT ─── */
+const FORMSPREE_URL = 'https://formspree.io/f/mykdlgzl';
 
 function sendToSheets(entry) {
-  return fetch(SHEETS_URL, {
+  return fetch(FORMSPREE_URL, {
     method: 'POST',
-    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify(entry)
   }).catch(() => {}); // fail silently — localStorage is the fallback
 }
