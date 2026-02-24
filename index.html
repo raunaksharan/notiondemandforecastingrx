@@ -1071,7 +1071,7 @@
     </div>
     <div class="footer-bottom">
       <span>© 2024–25 Notion Demand Research · Peer-Reviewed Research</span>
-      <span>team@notiondemand.com · Open Science</span>
+      <span><a href="mailto:team@notiondemand.com">team@notiondemand.com</a> · Open Science</span>
     </div>
   </div>
 </footer>
@@ -1151,6 +1151,17 @@ document.querySelectorAll('.model-option input[type="radio"]').forEach(radio => 
   });
 });
 
+/* ─── SHEETS ENDPOINT ─── */
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxMvNzG_1loDmugZEyVDvGFpkUsipc97iZO6AI54kbt_EfcLEGZprDsE0G0uC5aTfQU/exec';
+
+function sendToSheets(entry) {
+  return fetch(SHEETS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(entry)
+  }).catch(() => {}); // fail silently — localStorage is the fallback
+}
+
 /* ─── MODAL FORM SUBMIT ─── */
 function submitWaitlist(e) {
   e.preventDefault();
@@ -1171,20 +1182,18 @@ function submitWaitlist(e) {
   }
   if (!valid) return;
 
-  // Simulate async
   const btn = document.getElementById('wl-submit');
   document.getElementById('wl-btn-text').style.opacity = '0';
   document.getElementById('wl-spinner').classList.remove('hidden');
   btn.disabled = true;
 
-  setTimeout(() => {
-    const entry = {
-      email, name, model: model.value, usecase,
-      source: 'modal',
-      createdAt: new Date().toISOString()
-    };
-    saveEntry(entry);
-
+  const entry = {
+    email, name, model: model.value, usecase,
+    source: 'modal',
+    createdAt: new Date().toISOString()
+  };
+  saveEntry(entry);
+  sendToSheets(entry).finally(() => {
     // Show success
     document.getElementById('modal-form-view').classList.add('hidden');
     document.getElementById('modal-success-view').classList.remove('hidden');
@@ -1195,7 +1204,7 @@ function submitWaitlist(e) {
     btn.disabled = false;
     document.getElementById('wl-btn-text').style.opacity = '1';
     document.getElementById('wl-spinner').classList.add('hidden');
-  }, 900);
+  });
 }
 
 /* ─── INLINE FORM SUBMIT ─── */
@@ -1221,17 +1230,16 @@ function submitInlineWaitlist(e) {
   document.getElementById('il-spinner').classList.remove('hidden');
   btn.disabled = true;
 
-  setTimeout(() => {
-    const entry = { email, model, source: 'inline', createdAt: new Date().toISOString() };
-    saveEntry(entry);
-
+  const entry = { email, model, source: 'inline', createdAt: new Date().toISOString() };
+  saveEntry(entry);
+  sendToSheets(entry).finally(() => {
     document.getElementById('inlineWaitlistForm').classList.add('hidden');
     document.getElementById('il-success').classList.remove('hidden');
 
     btn.disabled = false;
     document.getElementById('il-btn-text').style.opacity = '1';
     document.getElementById('il-spinner').classList.add('hidden');
-  }, 900);
+  });
 }
 
 /* ─── NAV SCROLL ─── */
